@@ -5,6 +5,16 @@ import { useToast } from '../context/ToastContext.jsx';
 import { checkoutAPI } from '../services/api.js';
 import { formatPrice } from '../utils/helpers.js';
 
+// ✅ Helper to parse image_urls safely
+function getFirstImage(image_urls, fallbackId) {
+    try {
+        const urls = typeof image_urls === 'string' ? JSON.parse(image_urls) : image_urls;
+        return Array.isArray(urls) && urls.length > 0 ? urls[0] : `https://picsum.photos/seed/${fallbackId}/80/80`;
+    } catch {
+        return `https://picsum.photos/seed/${fallbackId}/80/80`;
+    }
+}
+
 export default function Checkout() {
     const { cart, refreshCart } = useCart();
     const { showToast } = useToast();
@@ -17,7 +27,6 @@ export default function Checkout() {
     });
     const [errors, setErrors] = useState({});
 
-    // ✅ Fixed: cart.items not cart.cartItems
     const cartItems = cart?.items || [];
     const cartTotal = cart?.subtotal || 0;
 
@@ -34,9 +43,7 @@ export default function Checkout() {
 
     const handleChange = (field, value) => {
         setForm(prev => ({ ...prev, [field]: value }));
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
-        }
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
     };
 
     const handlePlaceOrder = async () => {
@@ -105,7 +112,7 @@ export default function Checkout() {
                 <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 
                 <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Shipping form */}
+                    {/* Shipping Form */}
                     <div className="flex-1">
                         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
                             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -200,17 +207,27 @@ export default function Checkout() {
 
                             <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-1">
                                 {cartItems.map(item => {
-                                    const img = item.Product?.image_urls?.[0] || `https://picsum.photos/seed/${item.product_id}/80/80`;
+                                    // ✅ Fixed: parse image_urls JSON string properly
+                                    const img = getFirstImage(item.Product?.image_urls, item.product_id);
                                     return (
                                         <div key={item.id} className="flex gap-3 items-center">
                                             <div className="relative flex-shrink-0">
-                                                <img src={img} alt={item.Product?.name} className="w-12 h-12 object-contain bg-gray-50 rounded border" />
-                                                <span className="absolute -top-1.5 -right-1.5 bg-gray-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{item.quantity}</span>
+                                                <img
+                                                    src={img}
+                                                    alt={item.Product?.name}
+                                                    className="w-12 h-12 object-contain bg-gray-50 rounded border"
+                                                    onError={e => { e.target.src = `https://picsum.photos/seed/${item.product_id}/80/80`; }}
+                                                />
+                                                <span className="absolute -top-1.5 -right-1.5 bg-gray-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                                    {item.quantity}
+                                                </span>
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs text-gray-700 truncate font-medium">{item.Product?.name}</p>
                                             </div>
-                                            <span className="text-sm font-semibold flex-shrink-0">{formatPrice(parseFloat(item.price) * item.quantity)}</span>
+                                            <span className="text-sm font-semibold flex-shrink-0">
+                                                {formatPrice(parseFloat(item.price) * item.quantity)}
+                                            </span>
                                         </div>
                                     );
                                 })}
