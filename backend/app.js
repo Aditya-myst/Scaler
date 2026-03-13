@@ -7,24 +7,20 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // --- Middleware Configuration ---
-
-// Configured CORS: Allows your local frontend AND your future deployed URL
 const corsOptions = {
     origin: [
-        'http://localhost:5173', // Vite default
-        'http://localhost:3000', // React default
-        process.env.FRONTEND_URL  // Your Vercel/Netlify URL (once deployed)
-    ].filter(Boolean), // Removes undefined if FRONTEND_URL isn't set yet
+        'http://localhost:5173',
+        'http://localhost:3000',
+        process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    methods: ['GET', 'POST', 'PUT','DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Use 'dev' logging in development, 'combined' in production
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // --- Database & Models ---
@@ -45,11 +41,9 @@ app.use('/orders', orderRoutes);
 app.use('/wishlist', wishlistRoutes);
 
 // --- System Routes ---
-
-// Health check (Crucial for Render/AWS deployment)
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'OK', 
+    res.status(200).json({
+        status: 'OK',
         uptime: process.uptime(),
         timestamp: new Date().toISOString()
     });
@@ -74,21 +68,38 @@ app.use((err, req, res, next) => {
 // --- Server Lifecycle ---
 async function startServer() {
     try {
-        // Test connection
         await db.sequelize.authenticate();
         console.log('✅ Database connection established.');
 
-        // Sync models (alter: true is safe for dev, use migrations for production)
         await db.sequelize.sync({ alter: true });
         console.log('✅ Database models synchronized.');
 
         app.listen(PORT, () => {
             console.log(`🚀 Server is active on port ${PORT}`);
             console.log(`📡 Health check: http://localhost:${PORT}/health`);
+
+            // ✅ Keep Render free tier awake (pings every 14 min)
+            if (process.env.NODE_ENV === 'production') {
+                const BACKEND_URL = process.env.RENDER_EXTERNAL_URL;
+                if (BACKEND_URL) {
+                    setInterval(async () => {
+                        try {
+                            const res = await fetch(`${BACKEND_URL}/health`);
+                            console.log(`🏓 Keep-alive ping: ${res.status}`);
+                        } catch (e) {
+                            console.warn('⚠️ Keep-alive ping failed:', e.message);
+                        }
+                    }, 14 * 60 * 1000);
+                    console.log(`🏓 Keep-alive enabled → ${BACKEND_URL}/health`);
+                } else {
+                    console.warn('⚠️ RENDER_EXTERNAL_URL not set — keep-alive disabled');
+                }
+            }
         });
+
     } catch (error) {
         console.error('❌ Database Sync/Connection Failed:', error);
-        process.exit(1); // Exit process with failure
+        process.exit(1);
     }
 }
 
