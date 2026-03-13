@@ -19,26 +19,22 @@ try {
 
 const db = {};
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(
-    config.database,
-    config.username,
-    config.password,
-    {
-      host: config.host,
-      port: config.port,
-      dialect: config.dialect,
-      logging: config.logging
-    }
-  );
-}
+// ✅ Pass full config including dialectOptions for SSL
+const sequelize = new Sequelize(
+  config.database,
+  config.username,
+  config.password,
+  {
+    host: config.host,
+    port: config.port,
+    dialect: config.dialect,
+    logging: config.logging,
+    dialectOptions: config.dialectOptions || {}  // ✅ this was missing
+  }
+);
 
 console.log('Sequelize instance created');
 
-// Load all model files
 const modelFiles = fs.readdirSync(__dirname)
   .filter((file) => {
     return (
@@ -61,7 +57,6 @@ modelFiles.forEach((file) => {
   }
 });
 
-// Apply associations after ALL models are loaded
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     try {

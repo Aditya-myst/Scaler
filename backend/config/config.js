@@ -8,7 +8,13 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
-    logging: console.log, // Change to false in production
+    logging: console.log,
+    dialectOptions: {
+      ssl: process.env.DB_HOST !== 'localhost' ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
+    }
   },
   production: {
     username: process.env.DB_USER,
@@ -17,6 +23,12 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
-    logging: false, // Disable logging in production
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
   },
 };
