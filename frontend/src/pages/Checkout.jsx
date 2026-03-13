@@ -201,7 +201,7 @@ export default function Checkout() {
                     </div>
 
                     {/* Order Summary */}
-                    <div className="lg:w-80 flex-shrink-0">
+                    <div className="lg:w-80 shrink-0">
                         <div className="bg-white rounded-xl shadow-md p-6 sticky top-28">
                             <h2 className="font-bold text-gray-900 mb-4">Order Summary</h2>
 
@@ -211,7 +211,7 @@ export default function Checkout() {
                                     const img = getFirstImage(item.Product?.image_urls, item.product_id);
                                     return (
                                         <div key={item.id} className="flex gap-3 items-center">
-                                            <div className="relative flex-shrink-0">
+                                            <div className="relative shrink-0">
                                                 <img
                                                     src={img}
                                                     alt={item.Product?.name}
@@ -225,7 +225,7 @@ export default function Checkout() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs text-gray-700 truncate font-medium">{item.Product?.name}</p>
                                             </div>
-                                            <span className="text-sm font-semibold flex-shrink-0">
+                                            <span className="text-sm font-semibold shrink-0">
                                                 {formatPrice(parseFloat(item.price) * item.quantity)}
                                             </span>
                                         </div>
@@ -257,7 +257,7 @@ export default function Checkout() {
                                 disabled={loading || cartItems.length === 0}
                                 className="w-full mt-5 py-3 bg-[#FF9900] hover:bg-[#e68a00] text-black font-bold rounded-full transition hover:shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Placing Order...' : 'Place Order'}
+                                {loading ? 'Placing Order....' : 'Place Order'}
                             </button>
                         </div>
                     </div>
